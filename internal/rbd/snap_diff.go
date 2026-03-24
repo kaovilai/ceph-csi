@@ -58,6 +58,8 @@ func (rbdSnap *rbdSnapshot) ProcessMetadata(
 		return fmt.Errorf("failed to get snapshot ID of %q: %w", rbdSnap, err)
 	}
 
+	log.DebugLog(ctx, "ProcessMetadata: image=%q, snapID=%d, VolSize=%d", rbdSnap, snapID, rbdSnap.VolSize)
+
 	err = image.SetSnapByID(snapID)
 	if err != nil {
 		return fmt.Errorf("failed to set snapshot %q by ID %d: %w",
@@ -107,11 +109,16 @@ func (rbdSnap *rbdSnapshot) ProcessMetadata(
 		diffIterateByIDConfig.FromSnapID = fromSnapID
 	}
 
+	log.DebugLog(ctx, "ProcessMetadata: DiffIterateByID config: Offset=%d, Length=%d, FromSnapID=%d",
+		diffIterateByIDConfig.Offset, diffIterateByIDConfig.Length, diffIterateByIDConfig.FromSnapID)
+
 	diffIterateErr := image.DiffIterateByID(diffIterateByIDConfig)
 	err = handleDiffIterateError(diffIterateErr)
 	if err != nil {
 		return fmt.Errorf("failed to get diff: %w", err)
 	}
+
+	log.DebugLog(ctx, "ProcessMetadata: DiffIterateByID completed, remaining blocks=%d", len(changedBlocks))
 
 	if len(changedBlocks) != 0 {
 		// Send any remaining changed blocks after the loop.
